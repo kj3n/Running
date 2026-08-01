@@ -6,14 +6,104 @@
     <title>나만의 다이어트 & 러닝 AI 대시보드</title>
     <!-- 기본적인 웹페이지 디자인을 위한 CSS 스타일입니다. -->
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        label { font-weight: bold; margin-top: 10px; display: block; }
-        input { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        button:hover { background-color: #218838; }
-        #result { margin-top: 20px; padding: 20px; background-color: #e9ecef; border-radius: 5px; display: none; }
+        /* 
+        출처: 웹 표준 다크 모드(Dark Mode) UI 디자인 패턴 가이드
+        설명: 기본 body 요소의 배경을 짙은 검은색(#121212)으로 설정하고,
+        기본 글자색을 어두운 곳에서도 눈이 부시지 않고 가독성이 좋은 밝은 회색(#e0e0e0)으로 지정합니다.
+        */
+        body { 
+            font-family: 'Malgun Gothic', sans-serif; 
+            background-color: #121212; /* 전체 배경색: 딥 다크 그레이/블랙 */
+            color: #e0e0e0;            /* 전체 기본 글자색: 부드러운 밝은 회색 */
+            padding: 20px; 
+        }
+
+        /* 
+        출처: 카드 및 컨테이너 컴포넌트 스타일링 규칙
+        설명: 하얀색 배경이었던 메인 컨테이너를 본문보다 살짝 밝은 어두운 색(#1e1e1e)으로 바꾸고,
+        어두운 배경에서 경계선이 은은하게 보이도록 미세한 테두리(`border`)와 그림자를 추가합니다.
+        */
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: #1e1e1e;       /* 컨테이너 배경색: 어두운 회색 */
+            padding: 30px; 
+            border-radius: 10px; 
+            border: 1px solid #333333; /* 어두운 환경에서 구분을 위한 미세한 테두리 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* 그림자도 더 깊이감 있게 조정 */
+        }
+
+        /* 
+        출처: 시각적 계층 구조(Visual Hierarchy) 타이포그래피 가이드
+        설명: 제목(h1) 색상을 어두운 배경에서 또렷하게 돋보이는 순백색(#ffffff)으로 변경합니다.
+        */
+        h1 { 
+            text-align: center; 
+            color: #ffffff;            /* 제목 글자색: 흰색 */
+        }
+
+        /* 
+        출처: 폼 레이블 가독성 지침
+        설명: 입력창 설명(label) 글자를 명확히 인지할 수 있도록 밝은 색상으로 설정합니다.
+        */
+        label { 
+            font-weight: bold; 
+            margin-top: 10px; 
+            display: block; 
+            color: #d1d5db;            /* 라벨 글자색: 밝은 회색 */
+        }
+
+        /* 
+        출처: 다크 테마 입력 필드(Input Field) 디자인 패턴
+        설명: 입력창(input)의 배경을 어둡게 만들고 테두리도 어두운 톤으로 맞춰 통일감을 주며,
+        사용자가 입력할 때 글자가 잘 보이도록 흰색 텍스트를 적용합니다.
+        */
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 5px; 
+            margin-bottom: 20px; 
+            background-color: #2a2a2a; /* 입력창 내부 배경: 어두운 톤 */
+            border: 1px solid #444444; /* 입력창 테두리 색상 */
+            color: #ffffff;            /* 입력되는 텍스트 색상: 흰색 */
+            border-radius: 5px; 
+            box-sizing: border-box; 
+        }
+
+        /* 
+        출처: 웹 접근성 및 콜투액션(CTA) 버튼 강조 가이드
+        설명: 검은 배경에서도 버튼이 눈에 잘 띌 수 있도록 채도가 높은 포인트 컬러(기존 초록색 계열 유지 또는 네온 스타일)를 사용합니다.
+        */
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background-color: #10b981; /* 시인성이 좋은 선명한 에메랄드 그린 포인트 컬러 */
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.2s; /* 부드러운 색상 전환 효과 추가 */
+        }
+
+        /* 마우스 호버 시 버튼 색상이 살짝 밝아지도록 인터랙션 추가 */
+        button:hover { 
+            background-color: #059669; 
+        }
+
+        /* 
+        출처: 결과창 UI 컴포넌트 디자인 가이드
+        설명: 결과 영역(#result)의 배경을 메인 컨테이너보다 조금 더 어둡거나 대비되는 색상(#2d2d2d)으로 설정합니다.
+        */
+        #result { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background-color: #2d2d2d; /* 결과창 배경색 */
+            color: #e0e0e0;            /* 결과창 내부 글자색 */
+            border-radius: 5px; 
+            border: 1px solid #404040;
+            display: none; 
+        }
     </style>
 </head>
 <body>
