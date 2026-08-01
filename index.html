@@ -214,9 +214,6 @@
         <label for="intake">오늘 섭취한 칼로리 (kcal):</label>
         <input type="number" id="intake" placeholder="예: 1800">
 
-        <label for="apiKey">🔑 Gemini API Key (저장되지 않고 즉시 휘발됩니다):</label>
-        <input type="text" id="apiKey" class="api-input" placeholder="AI Studio에서 발급받은 키를 입력하세요">
-
         <button id="submitBtn" onclick="analyzeData()">실제 AI 분석 결과 보기 (Gemini 연동)</button>
 
         <div id="result"></div>
@@ -464,19 +461,19 @@
 
 <!-- 메인 로직: AI 분석 -->
 <script>
+    // Cloudflare Worker 프록시 주소와 앱 시크릿
+    // (APP_SECRET은 완벽한 비밀은 아니지만, URL만 아는 무작위 요청/봇을 걸러주는 최소한의 방어선입니다)
+    const WORKER_URL = "https://gemini-proxy.tneoddl0313.workers.dev";
+    const APP_SECRET = "erhqwfvhansvnmbxczvcxvyutqytuwevrnbmwqvrhjgwasfdjyhasfcjhgsdcvahjgwv3eyuwtqfrwhjgsavfdcjhnbscvbnxtyvqwytuaefcjhgasdvfnmasd";
+
     async function analyzeData() {
         const distance = parseFloat(document.getElementById('distance').value);
         const time = parseInt(document.getElementById('time').value);
         const intake = parseInt(document.getElementById('intake').value);
-        const apiKey = document.getElementById('apiKey').value.trim();
         const weight = 95;
 
         if (isNaN(distance) || distance <= 0 || isNaN(time) || isNaN(intake)) {
             alert("운동 및 식단 항목에 올바른 숫자를 입력해주세요! (거리는 0보다 커야 합니다)");
-            return;
-        }
-        if (!apiKey) {
-            alert("Gemini API 키를 입력해주세요!");
             return;
         }
 
@@ -516,11 +513,12 @@
         `;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
-
-            const response = await fetch(url, {
+            const response = await fetch(WORKER_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-App-Secret': APP_SECRET
+                },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: promptText }] }]
                 })
