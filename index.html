@@ -240,6 +240,7 @@
         getDocs,
         query,
         orderBy,
+        limit,
         serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -404,6 +405,34 @@
             `;
         }).join('');
     };
+
+    // ---------- Gemini 프롬프트에 넣을 "최근 기록 요약 텍스트" 생성 ----------
+    // 오늘 기록을 저장하기 전, DB에 이미 있는 과거 기록을 최신순으로 가져와서
+    // 사람이 읽기 좋은 텍스트로 변환합니다. Gemini가 이 텍스트를 보고 오늘 기록과 비교합니다.
+    window.getRecentHistoryForPrompt = async function (maxCount = 7) {
+        if (!currentUser) return "이전 기록 없음 (로그인 필요)";
+
+        const q = query(recordsCollection(), orderBy('createdAt', 'desc'), limit(maxCount));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            return "이전 기록 없음 (오늘이 첫 기록입니다)";
+        }
+
+        // 최신순으로 가져온 걸 다시 날짜순(오래된 것 -> 최근)으로 뒤집어서 흐름을 보기 쉽게 함
+        const rows = snap.docs.map(d => d.data()).reverse();
+
+        const lines = rows.map(r => {
+            const netSign = r.netCalories > 0 ? "+" : "";
+            return `- ${r.date}: 거리 ${r.distance}km, 시간 ${r.time}분, 소모 ${r.burnedCalories}kcal, 섭취 ${r.intake}kcal, 넷 ${netSign}${r.netCalories}kcal`;
+        });
+
+        // 평균값도 같이 계산해서 넘겨주면 Gemini가 비교하기 더 쉬움
+        const avgDistance = (rows.reduce((s, r) => s + Number(r.distance), 0) / rows.length).toFixed(1);
+        const avgNet = Math.round(rows.reduce((s, r) => s + Number(r.netCalories), 0) / rows.length);
+
+        return `최근 ${rows.length}회 기록 (오래된 순):\n${lines.join('\n')}\n(최근 평균: 거리 ${avgDistance}km, 넷 칼로리 ${avgNet > 0 ? "+" : ""}${avgNet}kcal)`;
+    };
 </script>
 
 <!-- 메인 로직: AI 분석 -->
@@ -437,18 +466,26 @@
         const totalBurned = bmr + burnedCalories;
         const netCalories = totalBurned - intake;
 
+        // DB에 저장된 과거 기록을 가져와서 프롬프트에 함께 넣어줌 (오늘 기록과 비교시키기 위함)
+        const recentHistoryText = await window.getRecentHistoryForPrompt(7);
+
         const promptText = `
             나는 키 181cm, 몸무게 95kg이고 75kg까지 감량하는 것이 목표야.
-            오늘 나의 기록은 다음과 같아:
+
+            [나의 최근 운동 기록 DB]
+            ${recentHistoryText}
+
+            [오늘의 기록]
             - 달린 거리: ${distance}km
             - 달린 시간: ${time}분 (평균 페이스: 1km당 ${paceMinutes}분 ${paceSeconds}초)
             - 운동 소모 칼로리: ${burnedCalories}kcal
             - 오늘 섭취한 총 칼로리: ${intake}kcal
             - 오늘의 넷 칼로리 (총 소모량 - 섭취량): ${netCalories}kcal
 
-            위 데이터를 바탕으로 다이어트와 무릎 관절을 보호하는 러닝 관점에서, 
-            20kg을 뺄려면 얼마나 더 운동을 해야 하는지와, 
-            오늘 하루에 대한 평가와 내일을 위한 구체적인 조언을 3~4문장으로 다정하게 해줘.
+            위 [나의 최근 운동 기록 DB]와 [오늘의 기록]을 비교해서 답변해줘.
+            - 오늘 기록이 최근 평균/추세보다 나아졌는지 나빠졌는지 구체적으로 짚어줘 (거리, 페이스, 넷 칼로리 기준).
+            - 다이어트와 무릎 관절을 보호하는 러닝 관점에서, 20kg을 뺄려면 앞으로 어떻게 운동해야 하는지 조언해줘.
+            - 전체 평가와 내일을 위한 구체적인 조언을 4~5문장으로 다정하게 해줘.
         `;
 
         try {
