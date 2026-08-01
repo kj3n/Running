@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 다이어트 & 러닝 AI 대시보드</title>
+<style>
+    body { 
+        font-family: 'Malgun Gothic', sans-serif; 
+        background-color: #121212;
+        color: #e0e0e0;
+        padding: 20px; 
+    }
+
+    .container { 
+        max-width: 600px; 
+        margin: 0 auto; 
+        background: #1e1e1e;
+        padding: 30px; 
+        border-radius: 10px; 
+        border: 1px solid #333333;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    h1 { 
+        text-align: center; 
+        color: #ffffff;
+    }
+
+    h2 {
+        color: #ffffff;
+        font-size: 18px;
+        margin-top: 40px;
+        border-bottom: 1px solid #333333;
+        padding-bottom: 10px;
+    }
+
+    label { 
+        font-weight: bold; 
+        margin-top: 10px; 
+        display: block; 
+        color: #d1d5db;
+    }
+
+    input { 
+        width: 100%; 
+        padding: 10px; 
+        margin-top: 5px; 
+        margin-bottom: 20px; 
+        background-color: #2a2a2a;
+        border: 1px solid #444444;
+        color: #ffffff;
+        border-radius: 5px; 
+        box-sizing: border-box; 
+    }
+
+    button { 
+        width: 100%; 
+        padding: 15px; 
+        background-color: #10b981;
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        font-size: 16px; 
+        cursor: pointer; 
+        transition: background-color 0.2s;
+    }
+
+    button:hover { 
+        background-color: #059669; 
+    }
+
+    #result { 
+        margin-top: 20px; 
+        padding: 20px; 
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        border-radius: 5px; 
+        border: 1px solid #404040;
+        display: none; 
+    }
+
+    /* 히스토리 테이블 */
+    #historySection { margin-top: 20px; }
+    #historyEmpty {
+        color: #888888;
+        font-size: 14px;
+        text-align: center;
+        padding: 20px 0;
+    }
+    table.history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 13px;
+    }
+    table.history-table th, table.history-table td {
+        padding: 8px 6px;
+        text-align: center;
+        border-bottom: 1px solid #333333;
+        color: #e0e0e0;
+    }
+    table.history-table th { color: #10b981; font-weight: bold; white-space: nowrap; }
+    table.history-table tr:hover { background-color: #2a2a2a; }
+    .net-positive { color: #f87171; }
+    .net-negative { color: #34d399; }
+    .delete-btn {
+        width: auto;
+        padding: 4px 8px;
+        font-size: 12px;
+        background-color: #444444;
+    }
+    .delete-btn:hover { background-color: #dc2626; }
+    #clearHistoryBtn {
+        margin-top: 15px;
+        background-color: #333333;
+        font-size: 14px;
+        padding: 10px;
+    }
+    #clearHistoryBtn:hover { background-color: #dc2626; }
+
+    /* 로그인/회원가입 영역 */
+    #authError {
+        color: #f87171;
+        font-size: 13px;
+        margin-top: -12px;
+        margin-bottom: 12px;
+        min-height: 16px;
+    }
+    .auth-btn-row { display: flex; gap: 10px; }
+    .auth-btn-row button { margin-bottom: 20px; }
+    #signupBtn { background-color: #374151; }
+    #signupBtn:hover { background-color: #4b5563; }
+
+    #userBar {
+        display: none;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #333333;
+    }
+    #userBar span { color: #9ca3af; font-size: 14px; }
+    #logoutBtn {
+        width: auto;
+        padding: 8px 14px;
+        font-size: 13px;
+        background-color: #374151;
+    }
+    #logoutBtn:hover { background-color: #4b5563; }
+
+    #appSection { display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏃‍♂️ 오늘 하루 요약</h1>
+
+    <!-- 로그인 상태 표시줄 (로그인 후에만 보임) -->
+    <div id="userBar">
+        <span id="userEmailLabel"></span>
+        <button id="logoutBtn" onclick="handleLogout()">로그아웃</button>
+    </div>
+
+    <!-- 로그인 / 회원가입 영역 (로그인 전에만 보임) -->
+    <div id="authSection">
+        <label for="authEmail">이메일:</label>
+        <input type="email" id="authEmail" placeholder="you@example.com">
+
+        <label for="authPassword">비밀번호:</label>
+        <input type="password" id="authPassword" placeholder="6자 이상">
+
+        <div id="authError"></div>
+
+        <div class="auth-btn-row">
+            <button id="loginBtn" onclick="handleLogin()">로그인</button>
+            <button id="signupBtn" onclick="handleSignup()">회원가입</button>
+        </div>
+    </div>
+
+    <!-- 로그인 후에만 보이는 대시보드 -->
+    <div id="appSection">
+        <label for="distance">오늘 뛴 거리 (km):</label>
+        <input type="number" id="distance" placeholder="예: 3.5" step="0.1">
+
+        <label for="time">뛰는 데 걸린 시간 (분):</label>
+        <input type="number" id="time" placeholder="예: 35">
+
+        <label for="intake">오늘 섭취한 칼로리 (kcal):</label>
+        <input type="number" id="intake" placeholder="예: 1800">
+
+        <label for="apiKey">🔑 Gemini API Key (저장되지 않고 즉시 휘발됩니다):</label>
+        <input type="text" id="apiKey" class="api-input" placeholder="AI Studio에서 발급받은 키를 입력하세요">
+
+        <button id="submitBtn" onclick="analyzeData()">실제 AI 분석 결과 보기 (Gemini 연동)</button>
+
+        <div id="result"></div>
+
+        <div id="historySection">
+            <h2>📅 나의 기록 히스토리 (클라우드 DB에 저장됨)</h2>
+            <div id="historyEmpty">아직 저장된 기록이 없습니다. 분석을 완료하면 자동으로 기록됩니다.</div>
+            <div id="historyTableWrap" style="overflow-x:auto; display:none;">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>거리(km)</th>
+                            <th>시간(분)</th>
+                            <th>소모(kcal)</th>
+                            <th>섭취(kcal)</th>
+                            <th>넷(kcal)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+            <button id="clearHistoryBtn" onclick="clearAllHistory()">전체 기록 삭제</button>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase SDK (모듈 방식) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import {
+        getFirestore,
+        collection,
+        addDoc,
+        doc,
+        deleteDoc,
+        getDocs,
+        query,
+        orderBy,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC-Jtl2HS3e88v-VzbQEDXSaEnaR1nIKbg",
+        authDomain: "running-45dda.firebaseapp.com",
+        projectId: "running-45dda",
+        storageBucket: "running-45dda.firebasestorage.app",
+        messagingSenderId: "840752608965",
+        appId: "1:840752608965:web:ec3a59fe79c3edb8b322ac",
+        measurementId: "G-4MJVZVSNN2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    // ---------- 인증 상태 변화 감지 ----------
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        const userBar = document.getElementById('userBar');
+        const authSection = document.getElementById('authSection');
+        const appSection = document.getElementById('appSection');
+
+        if (user) {
+            userBar.style.display = 'flex';
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+            document.getElementById('userEmailLabel').innerText = `👤 ${user.email}`;
+            renderHistory();
+        } else {
+            userBar.style.display = 'none';
+            authSection.style.display = 'block';
+            appSection.style.display = 'none';
+        }
+    });
+
+    // ---------- 회원가입 / 로그인 / 로그아웃 ----------
+    window.handleSignup = async function () {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const errorEl = document.getElementById('authError');
+        errorEl.innerText = '';
+
+        if (!email || !password) {
+            errorEl.innerText = '이메일과 비밀번호를 모두 입력해주세요.';
+            return;
+        }
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+        } catch (e) {
+            errorEl.innerText = translateAuthError(e.code);
+        }
+    };
+
+    window.handleLogin = async function () {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const errorEl = document.getElementById('authError');
+        errorEl.innerText = '';
+
+        if (!email || !password) {
+            errorEl.innerText = '이메일과 비밀번호를 모두 입력해주세요.';
+            return;
+        }
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (e) {
+            errorEl.innerText = translateAuthError(e.code);
+        }
+    };
+
+    window.handleLogout = async function () {
+        await signOut(auth);
+    };
+
+    function translateAuthError(code) {
+        switch (code) {
+            case 'auth/email-already-in-use': return '이미 가입된 이메일입니다. 로그인을 눌러주세요.';
+            case 'auth/invalid-email': return '이메일 형식이 올바르지 않습니다.';
+            case 'auth/weak-password': return '비밀번호는 6자 이상이어야 합니다.';
+            case 'auth/invalid-credential':
+            case 'auth/wrong-password':
+            case 'auth/user-not-found': return '이메일 또는 비밀번호가 올바르지 않습니다.';
+            default: return `오류가 발생했습니다 (${code})`;
+        }
+    }
+
+    // ---------- Firestore 기록 CRUD ----------
+    function recordsCollection() {
+        return collection(db, 'users', currentUser.uid, 'records');
+    }
+
+    window.addHistoryRecord = async function (record) {
+        try {
+            await addDoc(recordsCollection(), {
+                ...record,
+                createdAt: serverTimestamp()
+            });
+            await renderHistory();
+        } catch (e) {
+            console.error('기록 저장 실패:', e);
+            alert('기록 저장에 실패했습니다: ' + e.message);
+        }
+    };
+
+    window.deleteHistoryRecord = async function (docId) {
+        try {
+            await deleteDoc(doc(db, 'users', currentUser.uid, 'records', docId));
+            await renderHistory();
+        } catch (e) {
+            alert('기록 삭제에 실패했습니다: ' + e.message);
+        }
+    };
+
+    window.clearAllHistory = async function () {
+        if (!confirm('저장된 모든 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+        try {
+            const snap = await getDocs(recordsCollection());
+            await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+            await renderHistory();
+        } catch (e) {
+            alert('전체 삭제에 실패했습니다: ' + e.message);
+        }
+    };
+
+    window.renderHistory = async function () {
+        if (!currentUser) return;
+
+        const emptyEl = document.getElementById('historyEmpty');
+        const wrapEl = document.getElementById('historyTableWrap');
+        const bodyEl = document.getElementById('historyTableBody');
+
+        const q = query(recordsCollection(), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            emptyEl.style.display = 'block';
+            wrapEl.style.display = 'none';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        wrapEl.style.display = 'block';
+
+        bodyEl.innerHTML = snap.docs.map(d => {
+            const r = d.data();
+            const netClass = r.netCalories > 0 ? 'net-positive' : 'net-negative';
+            const netSign = r.netCalories > 0 ? '+' : '';
+            return `
+                <tr>
+                    <td>${r.date}</td>
+                    <td>${r.distance}</td>
+                    <td>${r.time}</td>
+                    <td>${r.burnedCalories}</td>
+                    <td>${r.intake}</td>
+                    <td class="${netClass}">${netSign}${r.netCalories}</td>
+                    <td><button class="delete-btn" onclick="deleteHistoryRecord('${d.id}')">삭제</button></td>
+                </tr>
+            `;
+        }).join('');
+    };
+</script>
+
+<!-- 메인 로직: AI 분석 -->
+<script>
+    async function analyzeData() {
+        const distance = parseFloat(document.getElementById('distance').value);
+        const time = parseInt(document.getElementById('time').value);
+        const intake = parseInt(document.getElementById('intake').value);
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const weight = 95;
+
+        if (isNaN(distance) || distance <= 0 || isNaN(time) || isNaN(intake)) {
+            alert("운동 및 식단 항목에 올바른 숫자를 입력해주세요! (거리는 0보다 커야 합니다)");
+            return;
+        }
+        if (!apiKey) {
+            alert("Gemini API 키를 입력해주세요!");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        const originalBtnText = btn.innerText;
+        btn.innerText = "AI가 분석 중입니다... 잠시만 기다려주세요 ⏳";
+        btn.disabled = true;
+
+        const pace = time / distance;
+        const paceMinutes = Math.floor(pace);
+        const paceSeconds = Math.round((pace - paceMinutes) * 60);
+        const burnedCalories = Math.round(weight * distance * 1.036);
+        const bmr = 2000;
+        const totalBurned = bmr + burnedCalories;
+        const netCalories = totalBurned - intake;
+
+        const promptText = `
+            나는 키 181cm, 몸무게 95kg이고 75kg까지 감량하는 것이 목표야.
+            오늘 나의 기록은 다음과 같아:
+            - 달린 거리: ${distance}km
+            - 달린 시간: ${time}분 (평균 페이스: 1km당 ${paceMinutes}분 ${paceSeconds}초)
+            - 운동 소모 칼로리: ${burnedCalories}kcal
+            - 오늘 섭취한 총 칼로리: ${intake}kcal
+            - 오늘의 넷 칼로리 (총 소모량 - 섭취량): ${netCalories}kcal
+
+            위 데이터를 바탕으로 다이어트와 무릎 관절을 보호하는 러닝 관점에서, 
+            20kg을 뺄려면 얼마나 더 운동을 해야 하는지와, 
+            오늘 하루에 대한 평가와 내일을 위한 구체적인 조언을 3~4문장으로 다정하게 해줘.
+        `;
+
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }]
+                })
+            });
+
+            if (!response.ok) {
+                let errorDetail = `HTTP ${response.status}`;
+                try {
+                    const errBody = await response.json();
+                    errorDetail = errBody?.error?.message || errorDetail;
+                } catch (_) { /* 본문 파싱 실패 시 무시 */ }
+                throw new Error(errorDetail);
+            }
+
+            const data = await response.json();
+
+            if (!data.candidates || data.candidates.length === 0) {
+                const blockReason = data.promptFeedback?.blockReason;
+                throw new Error(
+                    blockReason
+                        ? `콘텐츠가 안전 필터에 의해 차단되었습니다 (${blockReason})`
+                        : "AI로부터 유효한 응답을 받지 못했습니다."
+                );
+            }
+
+            const candidate = data.candidates[0];
+            if (candidate.finishReason === "SAFETY" || !candidate.content?.parts?.[0]?.text) {
+                throw new Error("AI 응답이 안전 정책으로 인해 생성되지 않았습니다.");
+            }
+
+            const aiFeedback = candidate.content.parts[0].text;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h3>📊 오늘 하루 계산 결과</h3>
+                <p>⏱️ <b>평균 페이스:</b> 1km당 ${paceMinutes}분 ${paceSeconds}초</p>
+                <p>🔥 <b>운동 소모 칼로리:</b> ${burnedCalories} kcal</p>
+                <p>🍽️ <b>오늘의 넷 칼로리:</b> ${netCalories > 0 ? "+" : ""}${netCalories} kcal</p>
+                <hr>
+                <h3>🤖 진짜 Gemini AI 피드백</h3>
+                <p>${aiFeedback}</p>
+            `;
+
+            // 분석 성공 시 Firestore에 기록 저장
+            await window.addHistoryRecord({
+                date: new Date().toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                distance: distance,
+                time: time,
+                burnedCalories: burnedCalories,
+                intake: intake,
+                netCalories: netCalories
+            });
+
+        } catch (error) {
+            alert("AI 분석 중 오류가 발생했습니다. API 키가 정확한지 확인해주세요.\n상세 에러: " + error.message);
+        } finally {
+            btn.innerText = originalBtnText;
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
