@@ -95,7 +95,7 @@
         // 6. 통신 오류를 잡기 위해 try-catch 블록을 사용합니다.
         try {
             // Gemini 1.5 Flash 모델의 API 호출 엔드포인트 URL입니다. (주소 끝에 API 키를 붙입니다)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
             
             // HTTP POST 요청을 통해 JSON 형태로 프롬프트를 전송합니다.
             const response = await fetch(url, {
