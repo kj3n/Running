@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 다이어트 & 러닝 AI 대시보드</title>
+    <!-- 기본적인 웹페이지 디자인을 위한 CSS 스타일입니다. -->
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        label { font-weight: bold; margin-top: 10px; display: block; }
+        input { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        #result { margin-top: 20px; padding: 20px; background-color: #e9ecef; border-radius: 5px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏃‍♂️ 오늘 하루 요약</h1>
+    
+    <!-- 사용자로부터 데이터를 입력받는 폼(Form) 부분입니다. -->
+    <label for="distance">오늘 뛴 거리 (km):</label>
+    <input type="number" id="distance" placeholder="예: 3.5" step="0.1">
+
+    <label for="time">뛰는 데 걸린 시간 (분):</label>
+    <input type="number" id="time" placeholder="예: 35">
+
+    <label for="intake">오늘 섭취한 칼로리 (kcal):</label>
+    <input type="number" id="intake" placeholder="예: 1800">
+
+    <!-- 버튼을 누르면 자바스크립트의 analyzeData() 함수가 실행됩니다. -->
+    <button onclick="analyzeData()">AI 분석 결과 보기</button>
+
+    <!-- 결과가 출력될 공간입니다. 처음에는 숨겨져 있습니다. -->
+    <div id="result"></div>
+</div>
+
+<script>
+    // 입력된 데이터를 바탕으로 계산하고 결과를 화면에 보여주는 메인 함수입니다.
+    function analyzeData() {
+        // 1. 입력된 값들을 가져와서 숫자(Float/Int) 형태로 변환합니다.
+        const distance = parseFloat(document.getElementById('distance').value);
+        const time = parseInt(document.getElementById('time').value);
+        const intake = parseInt(document.getElementById('intake').value);
+        const weight = 95; // 현재 체중 (kg)
+
+        // 값이 하나라도 제대로 입력되지 않았다면 경고창을 띄웁니다.
+        if (isNaN(distance) || isNaN(time) || isNaN(intake)) {
+            alert("모든 항목에 숫자를 정확히 입력해주세요!");
+            return;
+        }
+
+        // 2. 데이터 분석 및 계산 파트
+        
+        // 페이스(Pace) 계산: 1km를 뛰는 데 걸리는 시간 (분/km)
+        // 거리(km)를 시간(분)으로 나누어 계산합니다.
+        const pace = time / distance;
+        const paceMinutes = Math.floor(pace); // 페이스의 '분' 부분
+        const paceSeconds = Math.round((pace - paceMinutes) * 60); // 페이스의 '초' 부분
+
+        // 달리기 소모 칼로리 계산 공식 (ACSM 기준)
+        // 공식: 체중(kg) * 달린 거리(km) * 1.036
+        const burnedCalories = Math.round(weight * distance * 1.036);
+
+        // 기초대사량(BMR) 임의 계산 (해리스-베네딕트 방정식 활용, 대략 2000kcal로 설정)
+        const bmr = 2000; 
+        
+        // 하루 총 소모 칼로리 = 기초대사량 + 운동 소모 칼로리
+        const totalBurned = bmr + burnedCalories;
+        
+        // 넷(Net) 칼로리: 총 소모량에서 섭취량을 뺀 값 (양수면 살이 빠지는 상태)
+        const netCalories = totalBurned - intake;
+
+        // 3. AI 피드백 메시지 생성 (간단한 조건문 기반의 룰베이스 AI)
+        let aiFeedback = "";
+        if (netCalories > 500) {
+            aiFeedback = "완벽합니다! 지금처럼 500kcal 이상의 적자를 유지하면 1주일에 0.5kg씩 안전하게 감량할 수 있습니다. 훌륭해요! 👍";
+        } else if (netCalories > 0) {
+            aiFeedback = "좋습니다! 소비 칼로리가 섭취 칼로리보다 많네요. 조금만 더 섭취량을 줄이거나 움직임을 늘리면 목표 도달이 빨라집니다.";
+        } else {
+            aiFeedback = "오늘은 섭취량이 조금 더 많았네요! 내일은 식사량을 조금 줄이거나, 걷는 시간을 10분 더 늘려보세요. 할 수 있습니다! 💪";
+        }
+
+        // 목표 페이스 조언 (초보자 권장 페이스인 1km당 7~8분 기준)
+        if (pace < 6) {
+            aiFeedback += "<br><br><b>💡 페이스 조언:</b> 지금 속도가 꽤 빠릅니다! 20kg 감량이 목표이므로 무릎 보호를 위해 페이스를 7분~8분/km 정도로 조금 늦추고 시간을 늘리는 것이 좋습니다.";
+        } else {
+            aiFeedback += "<br><br><b>💡 페이스 조언:</b> 현재 페이스가 다이어트와 지방 연소에 아주 적합한 속도입니다. 잘하고 계십니다!";
+        }
+
+        // 4. 계산된 결과들을 화면(HTML)에 표시합니다.
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block'; // 숨겨져 있던 결과창을 보이게 합니다.
+        resultDiv.innerHTML = `
+            <h3>📊 분석 결과</h3>
+            <p>⏱️ <b>평균 페이스:</b> 1km당 ${paceMinutes}분 ${paceSeconds}초</p>
+            <p>🔥 <b>운동 소모 칼로리:</b> ${burnedCalories} kcal</p>
+            <p>🍽️ <b>오늘의 넷 칼로리 (소모 - 섭취):</b> ${netCalories > 0 ? "+" : ""}${netCalories} kcal</p>
+            <hr>
+            <p>🤖 <b>AI 피드백:</b><br>${aiFeedback}</p>
+        `;
+    }
+</script>
+
+</body>
+</html>
