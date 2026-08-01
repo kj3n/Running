@@ -78,6 +78,30 @@
         border-radius: 5px; 
         border: 1px solid #404040;
         display: none; 
+        line-height: 1.6;
+    }
+
+    /* Gemini가 마크다운으로 준 텍스트가 marked.js를 거쳐 여기 담김 */
+    #aiFeedbackBody h1, #aiFeedbackBody h2, #aiFeedbackBody h3 {
+        color: #10b981;
+        margin-top: 20px;
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+    #aiFeedbackBody h1:first-child, #aiFeedbackBody h2:first-child, #aiFeedbackBody h3:first-child {
+        margin-top: 0;
+    }
+    #aiFeedbackBody p { margin: 8px 0; }
+    #aiFeedbackBody strong { color: #ffffff; }
+    #aiFeedbackBody ul, #aiFeedbackBody ol {
+        margin: 8px 0;
+        padding-left: 22px;
+    }
+    #aiFeedbackBody li { margin-bottom: 6px; }
+    #aiFeedbackBody hr {
+        border: none;
+        border-top: 1px solid #444444;
+        margin: 16px 0;
     }
 
     /* 히스토리 테이블 */
@@ -220,6 +244,9 @@
         </div>
     </div>
 </div>
+
+<!-- 마크다운을 HTML로 변환해주는 라이브러리 (Gemini 응답 렌더링용) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 
 <!-- Firebase SDK (모듈 방식) -->
 <script type="module">
@@ -535,7 +562,7 @@
                 <p>🍽️ <b>오늘의 넷 칼로리:</b> ${netCalories > 0 ? "+" : ""}${netCalories} kcal</p>
                 <hr>
                 <h3>🤖 진짜 Gemini AI 피드백</h3>
-                <p>${aiFeedback}</p>
+                <div id="aiFeedbackBody">${marked.parse(aiFeedback)}</div>
             `;
 
             // 분석 성공 시 Firestore에 기록 저장
